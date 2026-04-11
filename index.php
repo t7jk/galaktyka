@@ -48,6 +48,8 @@ body { background: #ffffff; font-family: 'Segoe UI', Arial, sans-serif; min-heig
 }
 .tile-header:hover { background: #dceefb; transform: none; color: #1a73e8; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
 .empty-cell { width: 80px; height: 88px; background: rgba(0,0,0,0.03); border-radius: 10px; border: 1px dashed rgba(0,0,0,0.08); }
+.tile-separator { background: repeating-linear-gradient(135deg,#f0f0f0 0,#f0f0f0 5px,#e0e0e0 5px,#e0e0e0 10px); border: 1px dashed #bbb; cursor: default; }
+.tile-separator:hover { background: repeating-linear-gradient(135deg,#f0f0f0 0,#f0f0f0 5px,#e0e0e0 5px,#e0e0e0 10px) !important; transform: none !important; box-shadow: 0 1px 4px rgba(0,0,0,.10) !important; }
 </style>
 </head>
 <body>
@@ -86,6 +88,8 @@ function renderGrid() {
         rowHtml += '<div class="tile tile-header" title="' + esc(tile.tytul) + '">'
                  + '<span class="label">' + esc(tile.tytul) + '</span>'
                  + '</div>';
+      } else if (tile.typ === 'separator') {
+        rowHtml += '<div class="tile tile-separator"></div>';
       } else {
         rowHtml += '<a class="tile" href="' + esc(tile.url) + '" target="_blank" title="' + esc(tile.url) + '">'
                  + '<img src="data/icons/' + esc(tile.ikona) + '?v=' + ICONS_V + '" alt="" onerror="this.style.opacity=\'0.2\'">'

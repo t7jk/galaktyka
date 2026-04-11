@@ -147,10 +147,11 @@ if ($is_ajax) {
             $typ   = trim($_POST['typ']   ?? '');
             $url   = trim($_POST['url']   ?? '');
             $ikona = trim($_POST['ikona'] ?? 'noicon.png');
-            if (!$tytul) { echo json_encode(['ok'=>false,'msg'=>'Brak tytułu']); exit; }
-            if ($typ !== 'naglowek' && !$url) { echo json_encode(['ok'=>false,'msg'=>'Brak URL']); exit; }
+            if (!$tytul && $typ !== 'separator') { echo json_encode(['ok'=>false,'msg'=>'Brak tytułu']); exit; }
+            if (!$tytul && $typ === 'separator') $tytul = 'sep-' . time();
+            if ($typ !== 'naglowek' && $typ !== 'separator' && !$url) { echo json_encode(['ok'=>false,'msg'=>'Brak URL']); exit; }
             save_undo_snapshot();
-            if ($typ !== 'naglowek' && !empty($_FILES['ikona_file']['name'])) {
+            if ($typ !== 'naglowek' && $typ !== 'separator' && !empty($_FILES['ikona_file']['name'])) {
                 $up = process_icon_upload($_FILES['ikona_file']);
                 if (!$up['ok']) { echo json_encode($up); exit; }
                 $ikona = $up['filename'];
@@ -179,6 +180,7 @@ if ($is_ajax) {
             $id = make_unique_id($tytul, $existing_ids);
             $tile_data = ['id'=>$id,'tytul'=>$tytul,'ikona'=>$ikona,'url'=>$url];
             if ($typ === 'naglowek') $tile_data['typ'] = 'naglowek';
+            elseif ($typ === 'separator') { $tile_data['typ'] = 'separator'; $tile_data['url'] = ''; $tile_data['ikona'] = ''; }
             $kafelki[] = $tile_data;
             save_json(KAFELKI, $kafelki);
             $menu[] = ['id'=>$id,'rzad'=>$rzad,'kolumna'=>$kol];
@@ -193,10 +195,10 @@ if ($is_ajax) {
             $typ   = trim($_POST['typ']   ?? '');
             $url   = trim($_POST['url']   ?? '');
             $ikona = trim($_POST['ikona'] ?? '');
-            if (!$id || !$tytul) { echo json_encode(['ok'=>false,'msg'=>'Brak danych']); exit; }
-            if ($typ !== 'naglowek' && !$url) { echo json_encode(['ok'=>false,'msg'=>'Brak URL']); exit; }
+            if (!$id || (!$tytul && $typ !== 'separator')) { echo json_encode(['ok'=>false,'msg'=>'Brak danych']); exit; }
+            if ($typ !== 'naglowek' && $typ !== 'separator' && !$url) { echo json_encode(['ok'=>false,'msg'=>'Brak URL']); exit; }
             save_undo_snapshot();
-            if ($typ !== 'naglowek' && !empty($_FILES['ikona_file']['name'])) {
+            if ($typ !== 'naglowek' && $typ !== 'separator' && !empty($_FILES['ikona_file']['name'])) {
                 $target = trim($_POST['ikona_target'] ?? '');
                 $up = process_icon_upload($_FILES['ikona_file'], $target);
                 if (!$up['ok']) { echo json_encode($up); exit; }
@@ -207,6 +209,7 @@ if ($is_ajax) {
                     $k['tytul'] = $tytul; $k['url'] = $url;
                     if ($ikona) $k['ikona'] = $ikona;
                     if ($typ === 'naglowek') $k['typ'] = 'naglowek';
+                    elseif ($typ === 'separator') { $k['typ'] = 'separator'; $k['url'] = ''; $k['ikona'] = ''; }
                     else unset($k['typ']);
                     break;
                 }
@@ -226,6 +229,58 @@ if ($is_ajax) {
             $menu    = array_values(array_filter($menu,    fn($p)=>$p['id']!==$id));
             save_json(KAFELKI, $kafelki); save_json(MENU, $menu);
             echo json_encode(['ok'=>true,'has_undo'=>true]);
+            break;
+
+        // ── Usuń rząd ──────────────────────────────────────────────────────
+        case 'delete_row':
+            $rzad = (int)($_POST['rzad'] ?? 0);
+            if ($rzad < 1) { echo json_encode(['ok'=>false,'msg'=>'Brak rzędu']); exit; }
+            save_undo_snapshot();
+            $row_ids = [];
+            foreach ($menu as $p) {
+                if ((int)$p['rzad'] === $rzad) $row_ids[] = $p['id'];
+            }
+            $menu = array_values(array_filter($menu, fn($p) => (int)$p['rzad'] !== $rzad));
+            foreach ($menu as &$p) {
+                if ((int)$p['rzad'] > $rzad) $p['rzad']--;
+            }
+            unset($p);
+            $kafelki = array_values(array_filter($kafelki, fn($k) => !in_array($k['id'], $row_ids)));
+            save_json(KAFELKI, $kafelki); save_json(MENU, $menu);
+            echo json_encode(['ok'=>true,'deleted_ids'=>$row_ids,'menu'=>$menu,'has_undo'=>true]);
+            break;
+
+        // ── Przesuń rząd ───────────────────────────────────────────────────
+        case 'move_row':
+            $rzad = (int)($_POST['rzad'] ?? 0);
+            $dir  = trim($_POST['dir']  ?? '');
+            if ($rzad < 1 || !in_array($dir, ['up','down'])) {
+                echo json_encode(['ok'=>false,'msg'=>'Brak parametrów']); exit;
+            }
+            save_undo_snapshot();
+            $rows_used = array_values(array_unique(array_map(fn($p) => (int)$p['rzad'], $menu)));
+            sort($rows_used);
+            $pos = array_search($rzad, $rows_used);
+            if ($pos === false) { echo json_encode(['ok'=>false,'msg'=>'Rząd nie istnieje']); exit; }
+            if ($dir === 'up') {
+                if ($pos === 0) { echo json_encode(['ok'=>false,'msg'=>'Już na górze']); exit; }
+                $other = $rows_used[$pos - 1];
+            } else {
+                if ($pos === count($rows_used) - 1) { echo json_encode(['ok'=>false,'msg'=>'Już na dole']); exit; }
+                $other = $rows_used[$pos + 1];
+            }
+            $tmp = -1;
+            foreach ($menu as &$p) {
+                $r = (int)$p['rzad'];
+                if ($r === $rzad)  $p['rzad'] = $tmp;
+                elseif ($r === $other) $p['rzad'] = $rzad;
+            }
+            foreach ($menu as &$p) {
+                if ((int)$p['rzad'] === $tmp) $p['rzad'] = $other;
+            }
+            unset($p);
+            save_json(MENU, $menu);
+            echo json_encode(['ok'=>true,'menu'=>$menu,'has_undo'=>true]);
             break;
 
         // ── Przesuń ────────────────────────────────────────────────────────
@@ -455,6 +510,19 @@ button:hover { opacity: 0.85; }
 .empty-cell.move-mode { border-color:rgba(102,187,106,0.3); cursor:crosshair; }
 .empty-cell.move-mode:hover { border-color:#66bb6a; background:rgba(102,187,106,0.1); }
 
+/* Separator tile */
+.tile-separator { background:repeating-linear-gradient(135deg,#f0f0f0 0,#f0f0f0 5px,#e0e0e0 5px,#e0e0e0 10px); border:1px dashed #bbb !important; cursor:default; }
+.tile-separator:hover { background:repeating-linear-gradient(135deg,#f0f0f0 0,#f0f0f0 5px,#e0e0e0 5px,#e0e0e0 10px) !important; transform:none !important; box-shadow:0 1px 4px rgba(0,0,0,.10) !important; color:inherit !important; }
+
+/* Row controls */
+.row-ctrl { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:3px; padding:0 5px; opacity:0; transition:opacity 0.15s; flex-shrink:0; }
+.grid-row:hover .row-ctrl { opacity:1; }
+.row-ctrl button { width:22px; height:22px; padding:0; font-size:0.78rem; border-radius:4px; line-height:1; border:1px solid transparent; }
+.btn-del-row { background:#ffebee !important; color:#c62828 !important; border-color:#ef9a9a !important; }
+.btn-del-row:hover { background:#ef9a9a !important; }
+.btn-mv-row  { background:#e3f2fd !important; color:#1565c0 !important; border-color:#90caf9 !important; }
+.btn-mv-row:hover  { background:#90caf9 !important; }
+
 /* Przyciski na kafelku */
 .tile-actions { position:absolute; top:2px; right:2px; display:none; gap:2px; z-index:10; }
 .cell:hover .tile-actions { display:flex; }
@@ -527,13 +595,15 @@ button:hover { opacity: 0.85; }
 <div class="modal">
   <button class="modal-close" onclick="closeModal('modalTile')">×</button>
   <h2 id="modalTitle">Dodaj kafelek</h2>
-  <div class="form-group" style="background:#e8f0fe;border-radius:6px;padding:8px 12px">
-    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.82rem;color:#1a73e8">
-      <input type="checkbox" id="fNaglowek" onchange="toggleNaglowek(this.checked)" style="width:auto;accent-color:#1a73e8">
-      Nagłówek sekcji (bez ikony, opisuje rząd)
-    </label>
+  <div class="form-group">
+    <label>Typ kafelka</label>
+    <select id="fTileType" onchange="onTileTypeChange(this.value)" style="width:100%;padding:8px 12px;background:#fff;border:1px solid #ccc;border-radius:6px;color:#333;font-size:0.9rem">
+      <option value="">Zwykły kafelek</option>
+      <option value="naglowek">Nagłówek sekcji (bez ikony)</option>
+      <option value="separator">Separator (wizualny odstęp)</option>
+    </select>
   </div>
-  <div class="form-group"><label>Tytuł *</label><input type="text" id="fTytul" placeholder="np. Gmail"></div>
+  <div class="form-group" id="grpTytul"><label>Tytuł *</label><input type="text" id="fTytul" placeholder="np. Gmail"></div>
   <div id="grpUrl"><div class="form-group"><label>URL *</label><input type="text" id="fUrl" placeholder="https://..."></div></div>
   <div id="grpPosition">
   <div class="form-group">
@@ -653,6 +723,7 @@ function renderGrid() {
       rowDiv.appendChild(makeCell(r, c, id, tile));
       hasContent = true;
     }
+    if (hasContent && !isExtraRow && !moveMode) rowDiv.appendChild(makeRowCtrl(r));
     if (hasContent) container.appendChild(rowDiv);
   }
 
@@ -670,7 +741,7 @@ function makeCell(r, c, id, tile) {
 
   if (tile) {
     var d = document.createElement('div');
-    d.className = 'tile' + (tile.typ === 'naglowek' ? ' tile-header' : '');
+    d.className = 'tile' + (tile.typ === 'naglowek' ? ' tile-header' : tile.typ === 'separator' ? ' tile-separator' : '');
     d.dataset.id    = id;
     d.dataset.tytul = tile.tytul;
     d.dataset.url   = tile.url   || '';
@@ -678,6 +749,8 @@ function makeCell(r, c, id, tile) {
     d.onclick = (function(rr,cc){ return function(){ tileClick(this,rr,cc); }; })(r,c);
     if (tile.typ === 'naglowek') {
       d.innerHTML = '<span class="label">' + esc(tile.tytul) + '</span>';
+    } else if (tile.typ === 'separator') {
+      d.innerHTML = '';
     } else {
       d.innerHTML = '<img src="data/icons/' + esc(tile.ikona) + '?v=' + ICONS_V + '" alt="" onerror="this.style.opacity=\'0.15\'">'
                   + '<span class="label">' + esc(tile.tytul) + '</span>';
@@ -703,6 +776,47 @@ function makeCell(r, c, id, tile) {
 
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Kontrolki wiersza ─────────────────────────────────────────────────────
+function makeRowCtrl(rzad) {
+  var ctrl = document.createElement('div');
+  ctrl.className = 'row-ctrl';
+  var btnUp  = document.createElement('button');
+  btnUp.className  = 'btn-mv-row'; btnUp.title = 'Przesuń rząd w górę'; btnUp.textContent = '↑';
+  btnUp.onclick = (function(r){ return function(e){ e.stopPropagation(); doMoveRow(r,'up'); }; })(rzad);
+  var btnDel = document.createElement('button');
+  btnDel.className = 'btn-del-row'; btnDel.title = 'Usuń cały rząd'; btnDel.textContent = '✕';
+  btnDel.onclick = (function(r){ return function(e){ e.stopPropagation(); confirmDeleteRow(r); }; })(rzad);
+  var btnDn  = document.createElement('button');
+  btnDn.className  = 'btn-mv-row'; btnDn.title = 'Przesuń rząd w dół'; btnDn.textContent = '↓';
+  btnDn.onclick = (function(r){ return function(e){ e.stopPropagation(); doMoveRow(r,'down'); }; })(rzad);
+  ctrl.appendChild(btnUp);
+  ctrl.appendChild(btnDel);
+  ctrl.appendChild(btnDn);
+  return ctrl;
+}
+function confirmDeleteRow(rzad) {
+  if (!confirm('Usunąć cały rząd nr ' + rzad + '? Wszystkie kafelki w tym rzędzie zostaną usunięte.')) return;
+  var fd = new FormData();
+  fd.append('action','delete_row'); fd.append('rzad', rzad);
+  api(fd).then(function(r) {
+    if (!r.ok) { alert('Błąd: ' + (r.msg||'nieznany')); return; }
+    r.deleted_ids.forEach(function(id){ delete TILES[id]; });
+    MENU = r.menu;
+    updateUndoBtn(r.has_undo);
+    renderGrid();
+  });
+}
+function doMoveRow(rzad, dir) {
+  var fd = new FormData();
+  fd.append('action','move_row'); fd.append('rzad', rzad); fd.append('dir', dir);
+  api(fd).then(function(r) {
+    if (!r.ok) { alert('Błąd: ' + (r.msg||'nieznany')); return; }
+    MENU = r.menu;
+    updateUndoBtn(r.has_undo);
+    renderGrid();
+  });
 }
 
 // ── AJAX helper ────────────────────────────────────────────────────────────
@@ -824,9 +938,11 @@ function applyCrop() {
 }
 
 // ── Dodaj/Edytuj ───────────────────────────────────────────────────────────
-function toggleNaglowek(isHeader) {
-  document.getElementById('grpUrl').style.display  = isHeader ? 'none' : '';
-  document.getElementById('grpIcon').style.display = isHeader ? 'none' : '';
+function onTileTypeChange(val) {
+  var hideUrlIcon = (val === 'naglowek' || val === 'separator');
+  document.getElementById('grpUrl').style.display   = hideUrlIcon ? 'none' : '';
+  document.getElementById('grpIcon').style.display  = hideUrlIcon ? 'none' : '';
+  document.getElementById('grpTytul').style.display = (val === 'separator') ? 'none' : '';
 }
 function openAdd(rzad, kol) {
   document.getElementById('modalTitle').textContent = 'Dodaj kafelek';
@@ -838,11 +954,11 @@ function openAdd(rzad, kol) {
   document.getElementById('fIkonaFile').value = '';
   document.getElementById('fIkonaName').value = '';
   document.getElementById('ikonaPreview').style.display = 'none';
-  document.getElementById('fNaglowek').checked = false;
+  document.getElementById('fTileType').value = '';
   document.getElementById('grpPosition').style.display = 'none';
   document.getElementById('btnCropExisting').style.display = 'none';
   croppedBlob = null; cropTargetFilename = null;
-  toggleNaglowek(false);
+  onTileTypeChange('');
   loadIconList('');
   openModal('modalTile');
   setTimeout(function(){ document.getElementById('fTytul').focus(); }, 100);
@@ -850,7 +966,7 @@ function openAdd(rzad, kol) {
 function openEdit(id) {
   var tile = TILES[id]; if (!tile) return;
   var pos  = null; MENU.forEach(function(p){ if(p.id===id) pos=p; });
-  var isHeader = tile.typ === 'naglowek';
+  var tileType = tile.typ || '';
   document.getElementById('modalTitle').textContent  = 'Edytuj kafelek';
   document.getElementById('fEditId').value            = id;
   document.getElementById('fTytul').value             = tile.tytul;
@@ -859,15 +975,15 @@ function openEdit(id) {
   document.getElementById('fIkonaFile').value         = '';
   document.getElementById('fRzad').value              = pos ? pos.rzad    : 1;
   document.getElementById('fKolumna').value           = pos ? pos.kolumna : 1;
-  document.getElementById('fNaglowek').checked        = isHeader;
+  document.getElementById('fTileType').value          = tileType;
   document.getElementById('grpPosition').style.display = 'none';
-  document.getElementById('btnCropExisting').style.display = (!isHeader && tile.ikona) ? 'inline-block' : 'none';
+  document.getElementById('btnCropExisting').style.display = (tileType === '' && tile.ikona) ? 'inline-block' : 'none';
   croppedBlob = null; cropTargetFilename = null;
-  toggleNaglowek(isHeader);
+  onTileTypeChange(tileType);
   var p = document.getElementById('ikonaPreview');
-  if (!isHeader && tile.ikona) { p.src = 'data/icons/' + tile.ikona; p.style.display = 'block'; }
+  if (tileType === '' && tile.ikona) { p.src = 'data/icons/' + tile.ikona; p.style.display = 'block'; }
   else p.style.display = 'none';
-  if (!isHeader) loadIconList(tile.ikona);
+  if (tileType === '') loadIconList(tile.ikona);
   openModal('modalTile');
 }
 function saveTile() {
@@ -875,23 +991,24 @@ function saveTile() {
   var tytul    = document.getElementById('fTytul').value.trim();
   var url      = document.getElementById('fUrl').value.trim();
   var ikona    = document.getElementById('fIkonaName').value.trim();
-  var isHeader = document.getElementById('fNaglowek').checked;
-  if (!tytul) { alert('Wypełnij tytuł'); return; }
-  if (!isHeader && !url) { alert('Wypełnij URL'); return; }
+  var tileType = document.getElementById('fTileType').value;
+  var isSpecial = (tileType === 'naglowek' || tileType === 'separator');
+  if (!tytul && !isSpecial) { alert('Wypełnij tytuł'); return; }
+  if (!isSpecial && !url) { alert('Wypełnij URL'); return; }
   var fd = new FormData();
   fd.append('action',  id ? 'edit' : 'add');
   if (id) fd.append('id', id);
   fd.append('tytul',   tytul);
   fd.append('url',     url);
   fd.append('ikona',   ikona);
-  fd.append('typ',     isHeader ? 'naglowek' : '');
+  fd.append('typ',     tileType);
   fd.append('rzad',    document.getElementById('fRzad').value);
   fd.append('kolumna', document.getElementById('fKolumna').value);
   var fi = document.getElementById('fIkonaFile');
-  if (!isHeader && croppedBlob) {
+  if (!isSpecial && croppedBlob) {
     fd.append('ikona_file', croppedBlob, 'icon.png');
     if (cropTargetFilename) fd.append('ikona_target', cropTargetFilename);
-  } else if (!isHeader && fi.files[0]) {
+  } else if (!isSpecial && fi.files[0]) {
     fd.append('ikona_file', fi.files[0]);
   }
   document.getElementById('btnSave').disabled = true;
@@ -903,7 +1020,7 @@ function saveTile() {
       if (r.tile) TILES[id] = r.tile;
     } else {
       TILES[r.id] = { id:r.id, tytul:tytul, ikona:(r.ikona||ikona||''), url:url };
-      if (isHeader) TILES[r.id].typ = 'naglowek';
+      if (tileType) TILES[r.id].typ = tileType;
       MENU.push({ id:r.id, rzad:r.rzad, kolumna:r.kolumna });
     }
     if (r.icons_v) ICONS_V = r.icons_v;

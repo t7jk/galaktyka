@@ -62,30 +62,35 @@ FLAGS="--reverse --only-newer --verbose=1 --no-perms --no-umask"
 $DRY  && FLAGS="$FLAGS --dry-run"
 $WIPE && FLAGS="${FLAGS/--only-newer/} --delete"  # wipe: usuń zbędne + wymuś wszystkie pliki
 
-# Pliki/katalogi wykluczone z synchronizacji
-EXCL=(
-  "data/ftp.config"          # dane logowania — nigdy nie wgrywaj
-  "data/undo.json"           # tymczasowy snapshot undo — lokalny
-  ".git"
-  ".claude"
-  ".playwright-mcp"
-  "setup.php"                # skrypt jednorazowy
-  "convert_icons.php"        # skrypt jednorazowy
-  "update_galaktyka.sh"      # sam skrypt
-  "docs"
-  "research"
-  "wiki"
-  "nocowanka-current.jpeg"
+# Pliki wykluczone z synchronizacji (regex dla lftp --exclude)
+# Katalogi: wzorzec z / na końcu wyklucza katalog i całą jego zawartość
+EXCL_REGEX=(
+  "^data/ftp\.config$"       # dane logowania — nigdy nie wgrywaj
+  "^data/undo\.json$"        # tymczasowy snapshot undo
+  "^\.git(/|$)"              # repozytorium git — NIE na serwer!
+  "^\.claude(/|$)"
+  "^\.playwright-mcp(/|$)"
+  "^setup\.php$"             # skrypt jednorazowy
+  "^convert_icons\.php$"     # skrypt jednorazowy
+  "^update_galaktyka\.sh$"   # sam skrypt
+  "^check_icons\.php$"
+  "^replace_icons\.php$"
+  "^research(/|$)"
+  "^wiki(/|$)"
+  "^nocowanka-current\.jpeg$"
+  "^README\.TXT$"
+  "^setup\.sh$"
+  "^\.gitignore$"
 )
 
-# Zbuduj argumenty --exclude dla lftp (glob)
+# Zbuduj argumenty --exclude dla lftp (regex)
 EXCL_ARGS=""
-for e in "${EXCL[@]}"; do
-  EXCL_ARGS+=" --exclude-glob=${e}"
+for r in "${EXCL_REGEX[@]}"; do
+  EXCL_ARGS+=" --exclude='${r}'"
 done
 
 # ── Uruchom ───────────────────────────────────────────────────────────────────
-lftp -u "${USER},${PASS}" "ftp://${HOST}:${PORT}" <<LFTP_CMD
+eval lftp -u "'${USER}','${PASS}'" "'ftp://${HOST}:${PORT}'" <<LFTP_CMD
 set ftp:passive-mode yes
 set ssl:verify-certificate no
 set net:timeout 30
