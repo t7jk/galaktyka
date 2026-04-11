@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Galaktyka — Dokumentacja</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <img class="logo" src="../data/icons/galaktyka.png" alt="Galaktyka" onerror="this.style.display='none'">
+  <div>
+    <h1>Galaktyka</h1>
+    <p class="tagline">Prywatna tablica skrótów do aplikacji webowych — dokumentacja</p>
+  </div>
+</header>
+
+<div class="container">
+
+  <section>
+    <h2>Do czego służy program?</h2>
+    <p>
+      <strong>Galaktyka</strong> to prywatna, lokalna tablica kafelków (launcher) do aplikacji i serwisów webowych.
+      Działa jako strona startowa w przeglądarce — zamiast zapamiętywać adresy, masz wszystkie ważne usługi
+      (banki, narzędzia AI, social media, panele administracyjne) zebrane w jednym miejscu jako klikalne kafelki.
+    </p>
+    <p>
+      Program jest zainstalowany na lokalnym serwerze (PHP + Apache) i dostępny z dowolnej przeglądarki
+      w sieci lokalnej pod adresem <code>http://&lt;adres-serwera&gt;/galaktyka/</code>.
+    </p>
+  </section>
+
+  <section>
+    <h2>Zrzut ekranu — obecna wersja</h2>
+    <div class="screenshot-wrap">
+      <figure>
+        <img src="screenshot.png" alt="Widok główny Galaktyki">
+        <figcaption>Widok główny — kafelki ułożone w rzędach tematycznych</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>Główne funkcje</h2>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="icon">🔲</div>
+        <h3>Kafelki tematyczne</h3>
+        <p>Kafelki pogrupowane tematycznie w rzędach: e-mail, finanse, serwery, social media, AI.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🖱️</div>
+        <h3>Jeden klik</h3>
+        <p>Kliknięcie kafelka otwiera serwis w nowej karcie. Najechanie pokazuje pełny URL.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">⚙️</div>
+        <h3>Panel admina</h3>
+        <p>Dodawanie, edycja i usuwanie kafelków przez przeglądarkę — bez edycji plików.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🎨</div>
+        <h3>Własne ikony</h3>
+        <p>Upload własnych ikon PNG dla każdego kafelka wprost z panelu administracyjnego.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">↕️</div>
+        <h3>Drag &amp; drop</h3>
+        <p>Kafelki można przeciągać i przestawiać w dowolne miejsce w siatce.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">↩️</div>
+        <h3>Cofnij zmianę</h3>
+        <p>Przycisk Undo w panelu przywraca poprzedni układ kafelków.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Jak używać — widok główny</h2>
+    <ol>
+      <li>Otwórz przeglądarkę i wejdź na adres Galaktyki.</li>
+      <li>Kafelki są ułożone w rzędach tematycznych — znajdź serwis, który chcesz otworzyć.</li>
+      <li>Kliknij kafelek — serwis otworzy się w <strong>nowej karcie</strong>.</li>
+      <li>Najechanie myszą na kafelek pokazuje pełny URL w tooltipie.</li>
+    </ol>
+    <div class="tip">
+      💡 Ustaw stronę Galaktyki jako stronę startową przeglądarki, żeby mieć wszystkie skróty pod ręką od razu po uruchomieniu.
+    </div>
+  </section>
+
+  <section>
+    <h2>Panel administracyjny</h2>
+    <p>Panel admina dostępny jest przez kafelek <strong>Admin</strong> lub bezpośrednio pod adresem <code>/galaktyka/admin.php</code>.</p>
+    <ul>
+      <li><strong>Login i hasło</strong> — ustawione w pliku <code>data/admin.config</code>.</li>
+      <li><strong>Dodaj kafelek</strong> — formularz z nazwą, URL i ikoną. Kafelek trafia do bieżącego wiersza.</li>
+      <li><strong>Edytuj kafelek</strong> — zmiana nazwy, URL lub ikony istniejącego kafelka.</li>
+      <li><strong>Przesuń kafelek</strong> — drag &amp; drop w trybie edycji lub strzałki w górę/dół/lewo/prawo.</li>
+      <li><strong>Usuń kafelek</strong> — przycisk kosza przy kafelku.</li>
+      <li><strong>Liczba kolumn</strong> — suwak szerokości siatki (2–20 kolumn).</li>
+      <li><strong>Undo</strong> — cofnięcie ostatniej zmiany układu.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Struktura plików</h2>
+    <ul>
+      <li><code>index.php</code> — widok główny, renderuje siatkę kafelków</li>
+      <li><code>admin.php</code> — panel administracyjny (wymaga logowania)</li>
+      <li><code>data/kafelki.config</code> — lista wszystkich kafelków (id, nazwa, ikona, URL)</li>
+      <li><code>data/menu.config</code> — układ siatki (który kafelek jest w którym rzędzie i kolumnie)</li>
+      <li><code>data/settings.config</code> — ustawienia (liczba kolumn)</li>
+      <li><code>data/admin.config</code> — dane logowania admina (nie trafia do repozytorium!)</li>
+      <li><code>data/ftp.config</code> — dane FTP do aktualizacji (nie trafia do repozytorium!)</li>
+      <li><code>data/icons/</code> — ikony PNG kafelków</li>
+      <li><code>docs/</code> — ta dokumentacja</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Instalacja nowej instancji</h2>
+    <ol>
+      <li>Skopiuj pliki projektu do katalogu serwera WWW (np. <code>/var/www/html/galaktyka/</code>).</li>
+      <li>Uruchom skrypt konfiguracyjny: <code>bash setup.sh</code> — utworzy pliki <code>.config</code> z przykładowych szablonów.</li>
+      <li>Edytuj <code>data/admin.config</code> — zmień login i hasło admina.</li>
+      <li>Edytuj <code>data/kafelki.config</code> — dodaj własne kafelki (lub użyj panelu admin).</li>
+      <li>Edytuj <code>data/menu.config</code> — ustaw kolejność wyświetlania kafelków.</li>
+      <li>Otwórz <code>http://&lt;serwer&gt;/galaktyka/</code> w przeglądarce.</li>
+    </ol>
+    <div class="tip">
+      💡 Szczegóły instalacji znajdziesz w pliku <code>README.TXT</code> w katalogu głównym projektu.
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  Galaktyka &mdash; prywatny launcher webowy | wersja lokalna
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,19 @@
+# Prywatne pliki konfiguracyjne — nie wgrywaj do repo!
+data/admin.config
+data/kafelki.config
+data/menu.config
+data/settings.config
+data/ftp.config
+data/undo.json
+
+# Ikony (prywatne — zawierają loga firm)
+# Odkomentuj poniżej jeśli chcesz wykluczyć ikony:
+# data/icons/
+
+# Zrzuty ekranu w dokumentacji (opcjonalnie)
+# docs/screenshot.png
+
+# Inne pliki systemowe
+.DS_Store
+Thumbs.db
+*.log

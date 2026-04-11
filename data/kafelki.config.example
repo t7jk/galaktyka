@@ -1,0 +1,6 @@
+[
+  {"id":"gmail",    "tytul":"Gmail",          "ikona":"gmail.png",    "url":"https://gmail.com/"},
+  {"id":"outlook",  "tytul":"MS Outlook 365", "ikona":"outlook.png",  "url":"https://outlook.office365.com/mail/"},
+  {"id":"office365","tytul":"MS Office 365",  "ikona":"office365.png","url":"https://login.microsoftonline.com/"},
+  {"id":"docs",     "tytul":"Dokumentacja",   "ikona":"galaktyka.png","url":"docs/"}
+]
