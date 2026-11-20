@@ -17,3 +17,6 @@ data/undo.json
 .DS_Store
 Thumbs.db
 *.log
+data/users.php
+data/mail.php
+data/auth_state.php

@@ -36,7 +36,7 @@ done
 
 echo ""
 echo "=== Gotowe! Kolejne kroki: ==="
-echo "  1. Edytuj data/admin.config   — zmień login i hasło admina"
+echo "  1. Skopiuj data/users.php.example i data/mail.php.example do data/users.php i data/mail.php (JSON po linii-guardzie, patrz store.php); admin.config jest już nieużywany"
 echo "  2. Edytuj data/kafelki.config — dodaj własne kafelki"
 echo "  3. Edytuj data/menu.config    — ustaw układ kafelków"
 echo "  4. Otwórz http://<serwer>/galaktyka/ w przeglądarce"

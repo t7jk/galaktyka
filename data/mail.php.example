@@ -1,0 +1,9 @@
+{
+    "host": "smtp.example.com",
+    "port": 587,
+    "user": "noreply@twojadomena.pl",
+    "pass": "haslo_skrzynki",
+    "from": "noreply@twojadomena.pl",
+    "from_name": "Galaktyka",
+    "base_url": "https://twojadomena.pl"
+}
