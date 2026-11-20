@@ -4,11 +4,7 @@ header('Pragma: no-cache');
 header('Expires: 0');
 session_start();
 define('DATA_DIR',    __DIR__ . '/data');
-define('ADMIN_CONFIG', DATA_DIR . '/admin.config');
-$_admin_cfg = @json_decode(@file_get_contents(ADMIN_CONFIG), true) ?: [];
-define('ADMIN_USER',  $_admin_cfg['user'] ?? 'admin');
-define('ADMIN_PASS',  $_admin_cfg['pass'] ?? '');
-unset($_admin_cfg);
+require_once __DIR__ . '/auth.php';
 define('ICONS_DIR',   __DIR__ . '/data/icons/');
 define('KAFELKI',     DATA_DIR . '/kafelki.config');
 define('MENU',        DATA_DIR . '/menu.config');
@@ -418,12 +414,7 @@ if ($is_ajax) {
 
 // ─── Logowanie ────────────────────────────────────────────────────────────────
 
-if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['login'])) {
-    if ($_POST['username']===ADMIN_USER && $_POST['password']===ADMIN_PASS) {
-        $_SESSION['admin']=true; header('Location: admin.php'); exit;
-    }
-    $login_error = 'Błędny login lub hasło';
-}
+$auth_view = isset($_SESSION['admin']) ? null : auth_handle($_POST, $_GET); // loguje/resetuje hasło; przy sukcesie przekierowuje
 if (isset($_POST['logout'])) { session_destroy(); header('Location: admin.php'); exit; }
 
 $logged_in   = isset($_SESSION['admin']);
@@ -544,6 +535,7 @@ button:hover { opacity: 0.85; }
 .icon-list-wrap { max-height:140px; overflow-y:auto; display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; background:#f8f9fa; border-radius:6px; padding:6px; }
 .icon-opt { width:36px; height:36px; object-fit:contain; border-radius:4px; border:2px solid transparent; cursor:pointer; background:#fff; }
 .icon-opt:hover, .icon-opt.sel { border-color:#1a73e8; }
+.ok-msg { background:#e6f4ea; color:#137333; border-radius:6px; padding:8px 12px; margin-bottom:12px; font-size:0.85rem; }
 </style>
 </head>
 <body>
@@ -551,16 +543,43 @@ button:hover { opacity: 0.85; }
 <?php if (!$logged_in): ?>
 <div class="login-box">
   <h2>⚙ Admin</h2>
-  <?php if (!empty($login_error)): ?>
-    <div class="err-msg"><?= htmlspecialchars($login_error) ?></div>
-  <?php endif; ?>
+  <?php if ($auth_view['err']): ?><div class="err-msg"><?= htmlspecialchars($auth_view['err']) ?></div><?php endif; ?>
+  <?php if ($auth_view['info']): ?><div class="ok-msg"><?= htmlspecialchars($auth_view['info']) ?></div><?php endif; ?>
+  <?php $csrf = '<input type="hidden" name="csrf" value="' . csrf_token() . '">'; ?>
+
+  <?php if ($auth_view['view'] === 'login'): ?>
   <form method="post">
-    <div class="form-group"><label>Login</label><input type="text" name="username" autofocus autocomplete="username"></div>
-    <div class="form-group"><label>Hasło</label><input type="password" name="password" autocomplete="current-password"></div>
+    <?= $csrf ?>
+    <div class="form-group"><label>E-mail</label><input type="email" name="email" autofocus autocomplete="username" required></div>
+    <div class="form-group"><label>Hasło</label><input type="password" name="password" autocomplete="current-password" required></div>
     <input type="hidden" name="login" value="1">
     <button type="submit" class="btn btn-primary" style="width:100%;padding:10px">Zaloguj</button>
   </form>
-  <div style="margin-top:14px;text-align:center"><a href="index.php" style="color:#555;font-size:0.8rem">← Powrót</a></div>
+  <div style="margin-top:14px;text-align:center"><a href="admin.php?a=forgot" style="color:#555;font-size:0.8rem">Nie pamiętam hasła</a></div>
+
+  <?php elseif ($auth_view['view'] === 'forgot'): ?>
+  <form method="post">
+    <?= $csrf ?>
+    <div class="form-group"><label>E-mail konta</label><input type="email" name="email" autofocus autocomplete="username" required></div>
+    <button type="submit" class="btn btn-primary" style="width:100%;padding:10px">Wyślij link</button>
+  </form>
+  <div style="margin-top:14px;text-align:center"><a href="admin.php" style="color:#555;font-size:0.8rem">← Wróć do logowania</a></div>
+
+  <?php elseif ($auth_view['view'] === 'reset'): ?>
+  <form method="post" action="admin.php?a=reset">
+    <?= $csrf ?>
+    <input type="hidden" name="t" value="<?= htmlspecialchars($auth_view['token']) ?>">
+    <div class="form-group"><label>Nowe hasło</label><input type="password" name="password" minlength="8" required autofocus autocomplete="new-password"></div>
+    <div class="form-group"><label>Powtórz hasło</label><input type="password" name="password2" minlength="8" required autocomplete="new-password"></div>
+    <button type="submit" class="btn btn-primary" style="width:100%;padding:10px">Zapisz hasło</button>
+  </form>
+
+  <?php else: /* reset_bad */ ?>
+  <div class="err-msg">Link jest nieprawidłowy lub wygasł.</div>
+  <div style="margin-top:14px;text-align:center"><a href="admin.php?a=forgot" style="color:#555;font-size:0.8rem">Poproś o nowy link</a></div>
+  <?php endif; ?>
+
+  <?php if ($auth_view['view'] === 'login'): ?><div style="margin-top:8px;text-align:center"><a href="index.php" style="color:#555;font-size:0.8rem">← Powrót</a></div><?php endif; ?>
 </div>
 
 <?php else: ?>

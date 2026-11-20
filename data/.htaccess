@@ -1,0 +1,9 @@
+# Dane i konfiguracja nie mogą być pobierane przez WWW (hasła, tokeny, FTP). Wyjątek: ikony.
+Require all denied
+<FilesMatch "\.(png|jpe?g|gif|svg|webp|ico)$">
+  Require all granted
+</FilesMatch>
+<IfModule !mod_authz_core.c>
+  Order deny,allow
+  Deny from all
+</IfModule>

@@ -67,6 +67,9 @@ $WIPE && FLAGS="${FLAGS/--only-newer/} --delete"  # wipe: usuń zbędne + wymuś
 EXCL_REGEX=(
   "^data/ftp\.config$"       # dane logowania — nigdy nie wgrywaj
   "^data/undo\.json$"        # tymczasowy snapshot undo
+  "^data/users\.php$"         # konta admina (hashe) — osobne na prod
+  "^data/mail\.php$"          # SMTP + base_url — osobne na prod
+  "^data/auth_state\.php$"    # próby logowania i tokeny resetu
   "^\.git(/|$)"              # repozytorium git — NIE na serwer!
   "^\.claude(/|$)"
   "^\.playwright-mcp(/|$)"
