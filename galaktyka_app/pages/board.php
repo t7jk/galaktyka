@@ -30,6 +30,16 @@ foreach ($kafelki_arr as $k) $tiles_by_id[$k['id']] = $k;
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: #ffffff; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; min-height: 100vh; padding: 10px; }
+/* Delikatna kratka w tle: jedno oczko = jedna komórka (80x88 + odstęp 6px = 86x94).
+   Linie leżą w środku odstępów: pierwsza komórka zaczyna się na 14px (padding body 10 + .grid-wrap 4),
+   więc przesunięcie to 14 - 3 = 11px. Zmiana rozmiaru .cell/.tile lub gap wymaga zmiany tych liczb. */
+body {
+  background-image:
+    linear-gradient(to right,  #eceff3 1px, transparent 1px),
+    linear-gradient(to bottom, #eceff3 1px, transparent 1px);
+  background-size: 86px 94px;
+  background-position: 11px 11px;
+}
 .grid-wrap { padding: 4px; }
 #mainGrid { display: flex; flex-direction: column; gap: 6px; width: 100%; }
 .grid-row  { display: flex; flex-wrap: wrap; gap: 6px; }
