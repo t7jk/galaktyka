@@ -1,8 +1,10 @@
 <?php
+/** Publiczna tablica kafelków (stub: public_html/index.php). Wymaga PIN-u albo sesji admina; ikony idą przez icon.php. */
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 header('Expires: 0');
-$data_dir    = __DIR__ . '/data';
+pin_require_access();
+$data_dir    = DATA_DIR;
 $kafelki_raw = @file_get_contents($data_dir . '/kafelki.config');
 $menu_raw    = @file_get_contents($data_dir . '/menu.config');
 $settings_raw= @file_get_contents($data_dir . '/settings.config');
@@ -11,7 +13,7 @@ $menu_arr    = $menu_raw     ? (json_decode($menu_raw,     true) ?: []) : [];
 $settings    = $settings_raw ? (json_decode($settings_raw, true) ?: []) : [];
 $init_cols   = (int)($settings['cols'] ?? 10);
 if ($init_cols < 2) $init_cols = 2;
-$icons_v = filemtime(__DIR__ . '/data/icons') ?: time();
+$icons_v = filemtime(ICONS_DIR) ?: time();
 
 $tiles_by_id = [];
 foreach ($kafelki_arr as $k) $tiles_by_id[$k['id']] = $k;
@@ -20,6 +22,7 @@ foreach ($kafelki_arr as $k) $tiles_by_id[$k['id']] = $k;
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Galaktyka</title>
 <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -92,7 +95,7 @@ function renderGrid() {
         rowHtml += '<div class="tile tile-separator"></div>';
       } else {
         rowHtml += '<a class="tile" href="' + esc(tile.url) + '" target="_blank" title="' + esc(tile.url) + '">'
-                 + '<img src="data/icons/' + esc(tile.ikona) + '?v=' + ICONS_V + '" alt="" onerror="this.style.opacity=\'0.2\'">'
+                 + '<img src="icon.php?f=' + encodeURIComponent(tile.ikona) + '&v=' + ICONS_V + '" alt="" onerror="this.style.opacity=\'0.2\'">'
                  + '<span class="label">' + esc(tile.tytul) + '</span>'
                  + '</a>';
       }

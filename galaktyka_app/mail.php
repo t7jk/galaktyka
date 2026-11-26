@@ -6,7 +6,7 @@
  * linii w DATA nie wymaga podwajania. Wyjątek przy każdym błędzie - wywołujący decyduje, co pokazać użytkownikowi.
  */
 require_once __DIR__ . '/store.php';
-const MAIL_CONFIG = __DIR__ . '/data/mail.php';
+const MAIL_CONFIG = DATA_DIR . '/mail.php';
 
 function mail_config(): array
 {

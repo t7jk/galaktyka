@@ -6,13 +6,12 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-DATA="$SCRIPT_DIR/data"
+DATA="$(dirname "$SCRIPT_DIR")/data"  # galaktyka_app/data
 
 echo "=== Galaktyka — setup nowej instalacji ==="
 echo ""
 
 EXAMPLES=(
-  "admin.config"
   "kafelki.config"
   "menu.config"
   "settings.config"
@@ -36,7 +35,7 @@ done
 
 echo ""
 echo "=== Gotowe! Kolejne kroki: ==="
-echo "  1. Skopiuj data/users.php.example i data/mail.php.example do data/users.php i data/mail.php (JSON po linii-guardzie, patrz store.php); admin.config jest już nieużywany"
+echo "  1. Skopiuj data/users.php.example i data/mail.php.example do data/users.php i data/mail.php (JSON po linii-guardzie, patrz store.php); pin.php powstaje sam (domyślny PIN 1980)"
 echo "  2. Edytuj data/kafelki.config — dodaj własne kafelki"
 echo "  3. Edytuj data/menu.config    — ustaw układ kafelków"
 echo "  4. Otwórz http://<serwer>/galaktyka/ w przeglądarce"

@@ -1,11 +1,9 @@
 <?php
+/** Panel admina (stub: public_html/admin.php). Sesję, DATA_DIR i ICONS_DIR daje bootstrap.php. */
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 header('Expires: 0');
-session_start();
-define('DATA_DIR',    __DIR__ . '/data');
-require_once __DIR__ . '/auth.php';
-define('ICONS_DIR',   __DIR__ . '/data/icons/');
+require_once APP_DIR . '/auth.php';
 define('KAFELKI',     DATA_DIR . '/kafelki.config');
 define('MENU',        DATA_DIR . '/menu.config');
 define('SETTINGS',    DATA_DIR . '/settings.config');
@@ -118,6 +116,24 @@ function process_icon_upload(array $file, string $target = ''): array {
 
     imagepng($dst, $path, 9); imagedestroy($dst);
     return ['ok'=>true,'filename'=>$filename];
+}
+
+// ─── PIN dostępu (zmiana PIN-u, zdjęcie blokady globalnej) ────────────────────
+
+/** Obsługuje formularz "PIN dostępu" (zwykły POST z CSRF, nie AJAX). Zwraca [ok, komunikat] albo null, gdy to nie ten formularz. */
+function admin_pin_handle(array $post): ?array {
+    $action = $post['pin_action'] ?? '';
+    if ($action === '') return null;
+    if (!csrf_ok($post)) return [false, 'Sesja wygasła, spróbuj ponownie.'];
+    if ($action === 'unblock') { pin_unblock_global(); return [true, 'Zdjęto blokadę PIN-u.']; }
+    if ($action === 'change') {
+        $new = (string)($post['new_pin'] ?? '');
+        if (!pin_valid_format($new))                   return [false, 'PIN musi mieć dokładnie 4 cyfry.'];
+        if ($new !== (string)($post['new_pin2'] ?? '')) return [false, 'PIN-y się różnią.'];
+        pin_change($new);
+        return [true, 'PIN zmieniony. Wszystkie dotychczasowe ciasteczka PIN przestały działać.'];
+    }
+    return null;
 }
 
 // ─── AJAX Handler ─────────────────────────────────────────────────────────────
@@ -418,12 +434,13 @@ $auth_view = isset($_SESSION['admin']) ? null : auth_handle($_POST, $_GET); // l
 if (isset($_POST['logout'])) { session_destroy(); header('Location: admin.php'); exit; }
 
 $logged_in   = isset($_SESSION['admin']);
+$pin_msg     = $logged_in ? admin_pin_handle($_POST) : null; // [ok(bool), tekst] po zmianie PIN-u / zdjęciu blokady
 $kafelki_arr = load_json(KAFELKI);
 $menu_arr    = load_json(MENU);
 $settings    = load_json(SETTINGS);
 $init_cols   = (int)($settings['cols'] ?? 10);
 if ($init_cols < 2) $init_cols = 2;
-$icons_v = filemtime(__DIR__ . '/data/icons') ?: time();
+$icons_v = filemtime(ICONS_DIR) ?: time();
 $tiles_by_id = [];
 foreach ($kafelki_arr as $k) $tiles_by_id[$k['id']] = $k;
 ?>
@@ -431,6 +448,7 @@ foreach ($kafelki_arr as $k) $tiles_by_id[$k['id']] = $k;
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Admin — Galaktyka</title>
 <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -595,6 +613,7 @@ button:hover { opacity: 0.85; }
     <button class="btn-success"   onclick="openAdd()">+ Dodaj</button>
     <button class="btn-move"      id="btnMove" onclick="toggleMove()">↔ Przesuń</button>
     <button class="btn-secondary" id="btnUndo" onclick="doUndo()" style="opacity:0.4" disabled>↩ Cofnij</button>
+    <button class="btn-secondary" onclick="openModal('modalPin')">🔑 PIN</button>
     <a href="index.php" class="btn btn-secondary" style="text-decoration:none;display:inline-flex;align-items:center">Widok</a>
     <form method="post" style="margin:0"><input type="hidden" name="logout" value="1"><button type="submit" class="btn-danger">Wyloguj</button></form>
   </div>
@@ -607,6 +626,30 @@ button:hover { opacity: 0.85; }
 
 <div class="grid-wrap">
   <div id="mainGrid"></div>
+</div>
+
+<!-- Modal: PIN dostępu -->
+<div class="overlay<?= $pin_msg ? ' show' : '' ?>" id="modalPin">
+<div class="modal">
+  <button class="modal-close" onclick="closeModal('modalPin')">×</button>
+  <h2>PIN dostępu do tablicy</h2>
+  <?php if ($pin_msg): ?><div class="<?= $pin_msg[0] ? 'ok-msg' : 'err-msg' ?>"><?= htmlspecialchars($pin_msg[1]) ?></div><?php endif; ?>
+  <form method="post" autocomplete="off">
+    <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
+    <input type="hidden" name="pin_action" value="change">
+    <div class="form-group"><label>Nowy PIN (4 cyfry)</label><input type="password" name="new_pin" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required></div>
+    <div class="form-group"><label>Powtórz PIN</label><input type="password" name="new_pin2" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required></div>
+    <div class="actions"><button type="submit" class="btn-primary">Zmień PIN</button></div>
+  </form>
+  <?php if ($blocked_min = pin_global_blocked_minutes()): ?>
+  <form method="post" style="margin-top:16px">
+    <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
+    <input type="hidden" name="pin_action" value="unblock">
+    <div class="err-msg">PIN jest zablokowany dla wszystkich jeszcze ok. <?= (int)$blocked_min ?> min (zbyt wiele błędnych prób).</div>
+    <button type="submit" class="btn-danger">Zdejmij blokadę</button>
+  </form>
+  <?php endif; ?>
+</div>
 </div>
 
 <!-- Modal: Dodaj/Edytuj -->
@@ -771,7 +814,7 @@ function makeCell(r, c, id, tile) {
     } else if (tile.typ === 'separator') {
       d.innerHTML = '';
     } else {
-      d.innerHTML = '<img src="data/icons/' + esc(tile.ikona) + '?v=' + ICONS_V + '" alt="" onerror="this.style.opacity=\'0.15\'">'
+      d.innerHTML = '<img src="icon.php?f=' + encodeURIComponent(tile.ikona) + '&v=' + ICONS_V + '" alt="" onerror="this.style.opacity=\'0.15\'">'
                   + '<span class="label">' + esc(tile.tytul) + '</span>';
     }
     cell.appendChild(d);
@@ -883,11 +926,11 @@ function renderIconList(filter, selected) {
   var f = filter.toLowerCase();
   allIcons.filter(function(n){ return !f || n.includes(f); }).forEach(function(name) {
     var img = document.createElement('img');
-    img.src = 'data/icons/' + name; img.title = name; img.className = 'icon-opt';
+    img.src = 'icon.php?f=' + encodeURIComponent(name); img.title = name; img.className = 'icon-opt';
     if (name === (selected || document.getElementById('fIkonaName').value)) img.classList.add('sel');
     img.onclick = function() {
       document.getElementById('fIkonaName').value = name;
-      document.getElementById('ikonaPreview').src = 'data/icons/' + name;
+      document.getElementById('ikonaPreview').src = 'icon.php?f=' + encodeURIComponent(name);
       document.getElementById('ikonaPreview').style.display = 'block';
       document.querySelectorAll('.icon-opt').forEach(i=>i.classList.remove('sel'));
       img.classList.add('sel');
@@ -923,7 +966,7 @@ function cropExistingIcon() {
   var tile = TILES[id]; if (!tile || !tile.ikona) return;
   cropTargetFilename = tile.ikona;
   var img = document.getElementById('cropImg');
-  img.src = 'data/icons/' + tile.ikona + '?t=' + Date.now();
+  img.src = 'icon.php?f=' + encodeURIComponent(tile.ikona) + '&t=' + Date.now();
   openModal('modalCrop');
   if (cropperInst) { cropperInst.destroy(); cropperInst = null; }
   img.onload = function() {
@@ -1000,7 +1043,7 @@ function openEdit(id) {
   croppedBlob = null; cropTargetFilename = null;
   onTileTypeChange(tileType);
   var p = document.getElementById('ikonaPreview');
-  if (tileType === '' && tile.ikona) { p.src = 'data/icons/' + tile.ikona; p.style.display = 'block'; }
+  if (tileType === '' && tile.ikona) { p.src = 'icon.php?f=' + encodeURIComponent(tile.ikona); p.style.display = 'block'; }
   else p.style.display = 'none';
   if (tileType === '') loadIconList(tile.ikona);
   openModal('modalTile');

@@ -1,11 +1,12 @@
 <?php
+if (php_sapi_name() !== 'cli') { http_response_code(404); exit; } // narzędzie tylko z linii poleceń (nigdy przez WWW)
 /**
  * SETUP.PHP — jednorazowy skrypt pobierający ikony z galaktyka.edu.pl
  * Konwertuje do PNG 50x50 (crop + resize) przez PHP GD.
  * Po uruchomieniu: usuń lub zabezpiecz ten plik!
  */
 
-$icons_dir = __DIR__ . '/data/icons/';
+$icons_dir = dirname(__DIR__) . '/data/icons/';
 if (!is_dir($icons_dir)) mkdir($icons_dir, 0755, true);
 
 $icon_sources = [

@@ -8,11 +8,10 @@
  * Limity: 5 błędnych logowań/IP = blokada 30 min; reset max 3 maile/h na konto i na IP.
  * Format plików i blokada zapisu: store.php.
  */
-require_once __DIR__ . '/store.php';
-require_once __DIR__ . '/mail.php';
+require_once __DIR__ . '/mail.php'; // store.php i security.php (CSRF) ładuje bootstrap.php
 
-const USERS_FILE   = __DIR__ . '/data/users.php';
-const STATE_FILE   = __DIR__ . '/data/auth_state.php';
+const USERS_FILE   = DATA_DIR . '/users.php';
+const STATE_FILE   = DATA_DIR . '/auth_state.php';
 const RESET_TTL    = 3600;
 const RESET_LIMIT  = 3;
 const LOGIN_MAX    = 5;
@@ -41,11 +40,6 @@ function check_credentials(string $email, string $password): ?array
     if (!$u) { password_verify($password, DUMMY_HASH); return null; }
     return password_verify($password, $u['hash']) ? $u : null;
 }
-
-// ─── CSRF ────────────────────────────────────────────────────────────────────
-
-function csrf_token(): string { return $_SESSION['csrf'] ??= bin2hex(random_bytes(16)); }
-function csrf_ok(array $p): bool { return isset($_SESSION['csrf'], $p['csrf']) && hash_equals($_SESSION['csrf'], (string)$p['csrf']); }
 
 // ─── Limit błędnych logowań (IP) ─────────────────────────────────────────────
 

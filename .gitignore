@@ -1,22 +1,10 @@
-# Prywatne pliki konfiguracyjne — nie wgrywaj do repo!
-data/admin.config
-data/kafelki.config
-data/menu.config
-data/settings.config
-data/ftp.config
-data/undo.json
-
-# Ikony (prywatne — zawierają loga firm)
-# Odkomentuj poniżej jeśli chcesz wykluczyć ikony:
-# data/icons/
-
-# Zrzuty ekranu w dokumentacji (opcjonalnie)
-# docs/screenshot.png
+# Dane i sekrety (galaktyka_app/data) - poza gitem. Wyjątki: pliki *.example i ikony (wzorcowy zestaw).
+galaktyka_app/data/*
+!galaktyka_app/data/*.example
+!galaktyka_app/data/icons/
+galaktyka_app/data/undo.json
 
 # Inne pliki systemowe
 .DS_Store
 Thumbs.db
 *.log
-data/users.php
-data/mail.php
-data/auth_state.php
