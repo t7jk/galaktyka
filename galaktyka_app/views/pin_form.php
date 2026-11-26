@@ -7,9 +7,10 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Galaktyka</title>
 <link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="stylesheet" href="assets/fonts.css">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: #fff; font-family: 'Segoe UI', Arial, sans-serif; color: #333; }
+body { background: #fff; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; color: #333; }
 .box { max-width: 300px; margin: 18vh auto 0; background: #f8f9fa; border-radius: 12px; padding: 28px; box-shadow: 0 4px 24px rgba(0,0,0,.12); text-align: center; }
 h1 { color: #1a73e8; font-size: 1.1rem; letter-spacing: 2px; margin-bottom: 18px; }
 label { display: block; margin-bottom: 8px; color: #666; font-size: .85rem; }

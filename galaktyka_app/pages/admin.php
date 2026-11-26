@@ -453,9 +453,10 @@ foreach ($kafelki_arr as $k) $tiles_by_id[$k['id']] = $k;
 <title>Admin — Galaktyka</title>
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="stylesheet" href="assets/cropper.min.css">
+<link rel="stylesheet" href="assets/fonts.css">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: #ffffff; font-family: 'Segoe UI', Arial, sans-serif; color: #333; min-height: 100vh; }
+body { background: #ffffff; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; color: #333; min-height: 100vh; }
 
 /* ── Header ── */
 header {

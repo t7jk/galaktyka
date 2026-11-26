@@ -26,9 +26,10 @@ foreach ($kafelki_arr as $k) $tiles_by_id[$k['id']] = $k;
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Galaktyka</title>
 <link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="stylesheet" href="assets/fonts.css">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: #ffffff; font-family: 'Segoe UI', Arial, sans-serif; min-height: 100vh; padding: 10px; }
+body { background: #ffffff; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; min-height: 100vh; padding: 10px; }
 .grid-wrap { padding: 4px; }
 #mainGrid { display: flex; flex-direction: column; gap: 6px; width: 100%; }
 .grid-row  { display: flex; flex-wrap: wrap; gap: 6px; }
