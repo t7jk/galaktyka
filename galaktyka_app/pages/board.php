@@ -1,8 +1,10 @@
 <?php
+/** Publiczna tablica kafelków (stub: public_html/index.php). Wymaga PIN-u albo sesji admina; ikony idą przez icon.php. */
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 header('Expires: 0');
-$data_dir    = __DIR__ . '/data';
+pin_require_access();
+$data_dir    = DATA_DIR;
 $kafelki_raw = @file_get_contents($data_dir . '/kafelki.config');
 $menu_raw    = @file_get_contents($data_dir . '/menu.config');
 $settings_raw= @file_get_contents($data_dir . '/settings.config');
@@ -11,7 +13,8 @@ $menu_arr    = $menu_raw     ? (json_decode($menu_raw,     true) ?: []) : [];
 $settings    = $settings_raw ? (json_decode($settings_raw, true) ?: []) : [];
 $init_cols   = (int)($settings['cols'] ?? 10);
 if ($init_cols < 2) $init_cols = 2;
-$icons_v = filemtime(__DIR__ . '/data/icons') ?: time();
+if ($init_cols > 12) $init_cols = 12; // limit systemu: maks. 12 ikon w rzędzie (jak w admin.php)
+$icons_v = filemtime(ICONS_DIR) ?: time();
 
 $tiles_by_id = [];
 foreach ($kafelki_arr as $k) $tiles_by_id[$k['id']] = $k;
@@ -20,12 +23,27 @@ foreach ($kafelki_arr as $k) $tiles_by_id[$k['id']] = $k;
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Galaktyka</title>
 <link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="stylesheet" href="assets/fonts.css">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: #ffffff; font-family: 'Segoe UI', Arial, sans-serif; min-height: 100vh; padding: 10px; }
+body { background: #ffffff; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; min-height: 100vh; padding: 10px; }
+/* Delikatna kratka w tle: jedno oczko = jedna komórka (80x88 + odstęp 6px = 86x94).
+   Kratka ma dokładnie COLS kolumn (maks. 12, limit systemu jak w admin.php), w dół wypełnia ekran.
+   Linie leżą w środku odstępów: komórki zaczynają się na 4px (padding .grid-wrap), przesunięcie 4 - 3 = 1px.
+   Zmiana rozmiaru .cell/.tile lub gap wymaga zmiany tych liczb. */
+.grid-wrap {
+  width: calc(var(--cols) * 86px + 2px);
+  min-height: calc(100vh - 20px);
+  background-image:
+    linear-gradient(to right,  #eceff3 1px, transparent 1px),
+    linear-gradient(to bottom, #eceff3 1px, transparent 1px);
+  background-size: 86px 94px;
+  background-position: 1px 1px;
+}
 .grid-wrap { padding: 4px; }
 #mainGrid { display: flex; flex-direction: column; gap: 6px; width: 100%; }
 .grid-row  { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -53,7 +71,7 @@ body { background: #ffffff; font-family: 'Segoe UI', Arial, sans-serif; min-heig
 </style>
 </head>
 <body>
-<div class="grid-wrap">
+<div class="grid-wrap" style="--cols: <?= $init_cols ?>">
   <div id="mainGrid"></div>
 </div>
 
@@ -92,7 +110,7 @@ function renderGrid() {
         rowHtml += '<div class="tile tile-separator"></div>';
       } else {
         rowHtml += '<a class="tile" href="' + esc(tile.url) + '" target="_blank" title="' + esc(tile.url) + '">'
-                 + '<img src="data/icons/' + esc(tile.ikona) + '?v=' + ICONS_V + '" alt="" onerror="this.style.opacity=\'0.2\'">'
+                 + '<img src="icon.php?f=' + encodeURIComponent(tile.ikona) + '&v=' + ICONS_V + '" alt="" onerror="this.style.opacity=\'0.2\'">'
                  + '<span class="label">' + esc(tile.tytul) + '</span>'
                  + '</a>';
       }

@@ -1,8 +1,9 @@
 <?php
+if (php_sapi_name() !== 'cli') { http_response_code(404); exit; } // narzędzie tylko z linii poleceń (nigdy przez WWW)
 // replace_icons.php — pobiera lepsze ikony dla "duchowatych"
 // Uruchom: php replace_icons.php
 
-$ICONS_DIR = __DIR__ . '/data/icons/';
+$ICONS_DIR = dirname(__DIR__) . '/data/icons/';
 
 // ── Mapa: plik → lista URL do próbowania po kolei ─────────────────────────────
 // Kolejność: Clearbit (wysokiej jakości logo) → DuckDuckGo favicon → Google favicon

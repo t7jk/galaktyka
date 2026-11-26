@@ -1,6 +1,7 @@
 <?php
+if (php_sapi_name() !== 'cli') { http_response_code(404); exit; } // narzędzie tylko z linii poleceń (nigdy przez WWW)
 // check_icons.php — diagnozuje "duchowatość" ikon po usunięciu tła
-$dir = __DIR__ . '/data/icons/';
+$dir = dirname(__DIR__) . '/data/icons/';
 $files = glob($dir . '*.png');
 sort($files);
 

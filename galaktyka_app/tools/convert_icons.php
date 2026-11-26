@@ -1,8 +1,9 @@
 <?php
+if (php_sapi_name() !== 'cli') { http_response_code(404); exit; } // narzędzie tylko z linii poleceń (nigdy przez WWW)
 // convert_icons.php — usuwa tło z ikon, zapisuje jako przezroczysty PNG
 // Uruchom raz: php convert_icons.php lub przez przeglądarkę
 
-$icons_dir = __DIR__ . '/data/icons/';
+$icons_dir = dirname(__DIR__) . '/data/icons/';
 $tolerance  = 55;   // fuzz: im wyższy tym więcej kolorów usuwa (0–441)
 
 // ---- helpers ----------------------------------------------------------------
