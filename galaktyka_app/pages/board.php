@@ -13,6 +13,7 @@ $menu_arr    = $menu_raw     ? (json_decode($menu_raw,     true) ?: []) : [];
 $settings    = $settings_raw ? (json_decode($settings_raw, true) ?: []) : [];
 $init_cols   = (int)($settings['cols'] ?? 10);
 if ($init_cols < 2) $init_cols = 2;
+if ($init_cols > 12) $init_cols = 12; // limit systemu: maks. 12 ikon w rzędzie (jak w admin.php)
 $icons_v = filemtime(ICONS_DIR) ?: time();
 
 $tiles_by_id = [];
@@ -31,14 +32,17 @@ foreach ($kafelki_arr as $k) $tiles_by_id[$k['id']] = $k;
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: #ffffff; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; min-height: 100vh; padding: 10px; }
 /* Delikatna kratka w tle: jedno oczko = jedna komórka (80x88 + odstęp 6px = 86x94).
-   Linie leżą w środku odstępów: pierwsza komórka zaczyna się na 14px (padding body 10 + .grid-wrap 4),
-   więc przesunięcie to 14 - 3 = 11px. Zmiana rozmiaru .cell/.tile lub gap wymaga zmiany tych liczb. */
-body {
+   Kratka ma dokładnie COLS kolumn (maks. 12, limit systemu jak w admin.php), w dół wypełnia ekran.
+   Linie leżą w środku odstępów: komórki zaczynają się na 4px (padding .grid-wrap), przesunięcie 4 - 3 = 1px.
+   Zmiana rozmiaru .cell/.tile lub gap wymaga zmiany tych liczb. */
+.grid-wrap {
+  width: calc(var(--cols) * 86px + 2px);
+  min-height: calc(100vh - 20px);
   background-image:
     linear-gradient(to right,  #eceff3 1px, transparent 1px),
     linear-gradient(to bottom, #eceff3 1px, transparent 1px);
   background-size: 86px 94px;
-  background-position: 11px 11px;
+  background-position: 1px 1px;
 }
 .grid-wrap { padding: 4px; }
 #mainGrid { display: flex; flex-direction: column; gap: 6px; width: 100%; }
@@ -67,7 +71,7 @@ body {
 </style>
 </head>
 <body>
-<div class="grid-wrap">
+<div class="grid-wrap" style="--cols: <?= $init_cols ?>">
   <div id="mainGrid"></div>
 </div>
 
